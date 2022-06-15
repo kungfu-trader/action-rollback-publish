@@ -1,6 +1,6 @@
-name: "Rollback GitHub Publish"
+name: "Rollback Release"
 author: "Kungfu Trader"
-description: "Rollback GitHub packages publish"
+description: "Rollback GitHub release"
 inputs:
   token:
     description: "E.g. secrets.GITHUB_TOKEN"

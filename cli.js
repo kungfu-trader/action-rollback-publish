@@ -7,4 +7,4 @@ const argv = require('yargs/yargs')(process.argv.slice(2))
   .option('owner', { description: 'owner', type: 'string' })
   .help().argv;
 
-lib.checkFormat(argv).catch(console.error);
+lib.rollbackRelease(argv).catch(console.error);

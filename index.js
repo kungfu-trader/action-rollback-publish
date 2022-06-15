@@ -9,7 +9,7 @@ const main = async function () {
     token: core.getInput('token'),
     owner: repo.owner,
   };
-  await lib.checkFormat(argv);
+  await lib.rollbackRelease(argv);
 };
 
 if (require.main === module) {
