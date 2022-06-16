@@ -39,7 +39,8 @@ exports.deletePublishedPackage = async function (token, repo, owner, names, delV
     }`);
   const edgesNumber = 0;
   const packageVersionId = packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.id;
-  const packageVersion = packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.version;
+  const packageVersion =
+    packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.version;
   if (delVersion == packageVersion) {
     await octokit.graphql(`
       mutation {
