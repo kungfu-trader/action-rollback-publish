@@ -61,7 +61,7 @@ exports.solveAllPackages = async function (argv) {
     console.log(`process path is: ${processPath}`);
     const packagePath = path.join(processPath, output[key].location);
     const package = path.join(packagePath, 'package.json');
-    console.log(`package.json path is: ${package}`);
+    console.log(`the package.json path is: ${package}`);
     const config = JSON.parse(fse.readFileSync(package));
     const names = config.name.split(['/'])[1];
     const delVersion = config.version;
