@@ -1,6 +1,6 @@
 {
   "name": "@kungfu-trader/action-rollback-release",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha.1",
   "main": "dist/index.js",
   "repository": "https://github.com/kungfu-trader/action-rollback-release",
   "author": "Keren Dong",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@actions/core": "^1.8.0",
     "@actions/github": "^5.0.0",
+    "fs-extra": "^10.1.0",
     "git-client": "^1.8.3",
     "nodegit": "^0.27.0",
     "semver": "^7.3.0",
