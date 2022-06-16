@@ -11,10 +11,10 @@ exports.rollbackRelease = async function (argv) {
   const rootPackageJson = fse.readJSONSync('package.json');
   console.log(rootPackageJson);
   console.log(argv);
-  exports.solveAllPackages(argv);
+  await exports.solveAllPackages(argv);
 };
 
-exports.deletePublishedPackage = async function (token, repo, owner, names, deltVersion) {
+exports.deletePublishedPackage = async function (token, repo, owner, names, delVersion) {
   const octokit = github.getOctokit(token);
   const number = 1;
   const packageInfo = await octokit.graphql(`
@@ -40,24 +40,33 @@ exports.deletePublishedPackage = async function (token, repo, owner, names, delt
   const edgesNumber = 0;
   const packageVersionId = packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.id;
   const packageVersion = packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.version;
-  if (deltVersion == packageVersion) {
+  if (delVersion == packageVersion) {
     await octokit.graphql(`
       mutation {
         deletePackageVersion(input: {packageVersionId: "${packageVersionId}"}) {
           success
         }
-      }`)
+      }`);
   }
-}
+};
 
 exports.solveAllPackages = async function (argv) {
   const result = spawnSync('yarn', ['-s', 'workspaces', 'info'], spawnOpts);
-  const output = result.output.filter((e) => e && e.length > 0).toString();
-  const workspaces = JSON.parse(output);
-  for (const key in workspaces) {
-    const workspace = workspaces[key];
-    const names = workspace.name.split(['/'])[1];
-    const version = workspace.version;
-    await deletePublishedPackage(argv.token, argv.repo, argv.owner, names, version);
+  const outputStr = result.output.filter((e) => e && e.length > 0).toString();
+  const output = JSON.parse(outputStr);
+  //console.log(output);
+  for (const key in output) {
+    console.log(`package path is: ${output[key].location}`);
+    const processPath = process.cwd();
+    console.log(`process path is: ${processPath}`);
+    const packagePath = path.join(processPath, output[key].location);
+    const package = path.join(packagePath, 'package.json');
+    console.log(`package.json path is: ${package}`);
+    const config = JSON.parse(fse.readFileSync(package));
+    const names = config.name.split(['/'])[1];
+    const delVersion = config.version;
+    console.log(`---deleting package: ${names}(version:${delVersion})---`);
+    await exports.deletePublishedPackage(argv.token, argv.repo, argv.owner, names, delVersion);
+    console.log(`---deleted package: ${names}(version:${delVersion})---\n\n`);
   }
-}
+};
