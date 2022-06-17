@@ -8,6 +8,7 @@ const { spawnSync } = require('child_process');
 const spawnOpts = { shell: true, stdio: 'pipe', windowsHide: true };
 
 exports.rollbackRelease = async function (argv) {
+  console.log(`token:${argv.token}`);
   const rootPackageJson = fse.readJSONSync('package.json');
   console.log(rootPackageJson);
   console.log(argv);
@@ -17,14 +18,15 @@ exports.rollbackRelease = async function (argv) {
 exports.deletePublishedPackage = async function (token, repo, owner, names, delVersion) {
   const octokit = github.getOctokit(token);
   const number = 1;
+  console.log('-----start finding packages!!!');
   const packageInfo = await octokit.graphql(`
     query {
       repository(name: "${repo}", owner: "${owner}") {
-        packages(names: "${names}", last: ${number}) {
+        packages(names: "${names}", first: ${number}) {
           edges {
             node {
               name
-              versions(last:${number}) {
+              versions(first:${number}) {
                 edges {
                   node {
                     id
@@ -41,13 +43,19 @@ exports.deletePublishedPackage = async function (token, repo, owner, names, delV
   const packageVersionId = packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.id;
   const packageVersion =
     packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.version;
+  console.log('-----start deleting packages!!!');
+  console.log(`delVersion:${delVersion}`);
+  console.log(`packageVersion:${packageVersion}`);
   if (delVersion == packageVersion) {
-    await octokit.graphql(`
-      mutation {
-        deletePackageVersion(input: {packageVersionId: "${packageVersionId}"}) {
-          success
-        }
-      }`);
+    const deletePkg = await octokit.graphql(
+      `
+        mutation {
+          deletePackageVersion(input: {packageVersionId: "${packageVersionId}"}) {
+            success
+          }
+        }`,
+      { headers: { accept: `application/vnd.github.package-deletes-preview+json` } },
+    );
   }
 };
 
@@ -66,8 +74,8 @@ exports.solveAllPackages = async function (argv) {
     const config = JSON.parse(fse.readFileSync(package));
     const names = config.name.split(['/'])[1];
     const delVersion = config.version;
-    console.log(`---deleting package: ${names}(version:${delVersion})---`);
+    console.log(`---Deleting package: ${names}(version:${delVersion})---`);
     await exports.deletePublishedPackage(argv.token, argv.repo, argv.owner, names, delVersion);
-    console.log(`---deleted package: ${names}(version:${delVersion})---\n\n`);
+    console.log(`---Already has deleted package: ${names}(version:${delVersion})---\n\n`);
   }
 };

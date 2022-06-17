@@ -5,11 +5,10 @@ const github = require('@actions/github');
 
 const main = async function () {
   const context = github.context;
-  const repo = github.context.repo;
   const argv = {
     token: core.getInput('token'),
-    owner: repo.owner,
-    repo: repo.repo,
+    owner: context.repo.owner,
+    repo: context.repo.repo,
   };
   await lib.rollbackRelease(argv);
 };
