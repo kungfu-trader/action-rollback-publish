@@ -12,10 +12,14 @@ const github = __nccwpck_require__(5438);
 
 const main = async function () {
   const context = github.context;
+  const headRef = process.env.GITHUB_HEAD_REF || context.ref;
+  const baseRef = process.env.GITHUB_BASE_REF || context.ref;
   const argv = {
     token: core.getInput('token'),
     owner: context.repo.owner,
     repo: context.repo.repo,
+    headRef: headRef,
+    baseRef: baseRef,
   };
   await lib.rollbackRelease(argv);
 };
@@ -49,6 +53,41 @@ exports.rollbackRelease = async function (argv) {
   console.log(rootPackageJson);
   console.log(argv);
   await exports.solveAllPackages(argv);
+  await exports.createNewPullRequest(argv);
+};
+
+exports.createNewPullRequest = async function (argv) {
+  const octokit = github.getOctokit(argv.token);
+  const lastMergedPullRequestInfo = await octokit.graphql(`
+    query {
+      repository(name: "${argv.repo}", owner: "${argv.owner}") {
+        id
+        pullRequests(last: 1, states: MERGED) {
+          nodes {
+            id
+            state
+            number
+            title
+          }
+        }
+      }
+    }`);
+  const number = lastMergedPullRequestInfo.repository.pullRequests.nodes[0].number;
+  const id = lastMergedPullRequestInfo.repository.id;
+  const title = lastMergedPullRequestInfo.repository.pullRequests.nodes[0].title;
+  console.log(`---Merged pr [${title}](pr number:[${number}]) is failed. Creating new open pr...`);
+  console.log(`repo id:[${id}]`);
+  console.log(`baseRef:[${argv.baseRef}]`);
+  console.log(`headRef:[${argv.headRef}]`);
+  console.log(`New pr title:[${title}]`);
+  const newPullRequest = await octokit.graphql(`
+    mutation {
+      createPullRequest(input: {repositoryId: "${id}", baseRefName: "${argv.baseRef}", headRefName: "${argv.headRef}", title: "${title}"}) {
+        clientMutationId
+      }
+    }`);
+
+  console.log(`New pr has created, which is:[${title}](${argv.headRef}--->${argv.baseRef});`);
 };
 
 exports.deletePublishedPackage = async function (token, repo, owner, names, delVersion) {
