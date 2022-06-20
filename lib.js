@@ -19,6 +19,10 @@ exports.rollbackRelease = async function (argv) {
   const rootPackageJson = fse.readJSONSync('package.json');
   console.log(`token:${argv.token}`);
   console.log(rootPackageJson);
+  await exports.solveAllPackages(argv);
+};
+
+exports.solveAllPackages = async function (argv) {
   const pkgsWorkspace = spawnSync('yarn', ['-s', 'workspaces', 'info'], spawnOpts);
   const outputStr = pkgsWorkspace.output.filter((e) => e && e.length > 0).toString();
   const output = JSON.parse(outputStr);
@@ -37,6 +41,7 @@ exports.rollbackRelease = async function (argv) {
     console.log(`---Starting to delete package: ${info.names}(version:${info.delVersion})---`);
     await exports.deletePublishedPackage(argv, info);
   }
+
   await exports.createNewPullRequest(output, argv);
 };
 
