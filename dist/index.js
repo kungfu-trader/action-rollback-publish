@@ -68,7 +68,12 @@ exports.solveAllPackages = async function (argv) {
   const output = JSON.parse(outputStr);
 
   for (const key in output) {
-    const package = __nccwpck_require__.ab + "action-rollback-release/" + output[key].location + '//package.json';
+    console.log(`package path is: ${output[key].location}`);
+    const processPath = process.cwd();
+    console.log(`process path is: ${processPath}`);
+    const packagePath = path.join(processPath, output[key].location);
+    const package = path.join(packagePath, 'package.json');
+    //const package = path.join(processCwd, output[key].location, 'package.json');
     console.log(`Package.json path is: ${package}`);
     const config = JSON.parse(fse.readFileSync(package));
     const info = {
@@ -100,7 +105,6 @@ exports.createNewPullRequest = async function (output, argv) {
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
   const devChannel = `dev/${versionRef}`;
   //await gitCall('fetch');
-  //await gitCall('switch', devChannel, `origin/${devChannel}`);
   await gitCall('switch', devChannel); // `origin/${devChannel}`
   await gitCall('pull');
 
@@ -127,16 +131,20 @@ exports.createNewPullRequest = async function (output, argv) {
   const headId = await gitCall('rev-parse', 'HEAD');
   const repositoryNameWithOwner = argv.owner + '/' + argv.repo;
   console.log(`---------The branch now is pointing to ${headId}`);
-  console.log(`-----------repositoryNameWithOwner:${repositoryNameWithOwner}`);
+  console.log(`---------RepositoryNameWithOwner:${repositoryNameWithOwner}`);
   for (const key in output) {
-    const package = __nccwpck_require__.ab + "action-rollback-release/" + output[key].location + '//package.json';
+    console.log(`package path is: ${output[key].location}`);
+    const processPath = process.cwd();
+    console.log(`process path is: ${processPath}`);
+    const packagePath = path.join(processPath, output[key].location);
+    const package = path.join(packagePath, 'package.json');
+    //const package = path.join(processCwd, output[key].location, 'package.json');
     const config = JSON.parse(fse.readFileSync(package));
     const info = {
       names: config.name.split(['/'])[1],
       delVersion: config.version,
       package: package,
       config: config,
-      package: package,
     };
     if (!config.repository) {
       config.repository = {
@@ -147,13 +155,6 @@ exports.createNewPullRequest = async function (output, argv) {
     }
   }
   await gitCall('add', '.');
-  // const newCommit = await octokit.graphql(`
-  //   mutation {
-  //     createCommitOnBranch(
-  //       input: {branch: {branchName: "${argv.baseRef}", repositoryNameWithOwner: "${repositoryNameWithOwner}"}, message: {headline: "test"}, expectedHeadOid: "${headId}"}) {
-  //       clientMutationId
-  //     }
-  //   }`);
   await gitCall('commit', '-m', 'test');
   await gitCall('push');
   //await gitCall('push', 'origin', `HEAD:${devChannel}`);
