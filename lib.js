@@ -37,7 +37,7 @@ exports.rollbackRelease = async function (argv) {
     console.log(`---Starting to delete package: ${info.names}(version:${info.delVersion})---`);
     await exports.deletePublishedPackage(argv, info);
   }
-  //await exports.createNewPullRequest(output, argv);
+  await exports.createNewPullRequest(output, argv);
 };
 
 function hasLerna(cwd) {
