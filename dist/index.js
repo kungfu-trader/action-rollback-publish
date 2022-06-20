@@ -65,19 +65,19 @@ exports.rollbackRelease = async function (argv) {
 
   for (const key in output) {
     const package = __nccwpck_require__.ab + "action-rollback-release/" + output[key].location + '//package.json';
+    console.log(`Package.json path is: ${package}`);
     const config = JSON.parse(fse.readFileSync(package));
     const info = {
       names: config.name.split(['/'])[1],
       delVersion: config.version,
       package: package,
       config: config,
-      package: package,
     };
     console.log(`Package.json path is: ${info.package}`);
     console.log(`---Starting to delete package: ${info.names}(version:${info.delVersion})---`);
     await exports.deletePublishedPackage(argv, info);
   }
-  await exports.createNewPullRequest(output, argv);
+  //await exports.createNewPullRequest(output, argv);
 };
 
 function hasLerna(cwd) {
@@ -96,7 +96,7 @@ exports.createNewPullRequest = async function (output, argv) {
   const devChannel = `dev/${versionRef}`;
   //await gitCall('fetch');
   //await gitCall('switch', devChannel, `origin/${devChannel}`);
-  await gitCall('switch', devChannel);
+  await gitCall('switch', devChannel); // `origin/${devChannel}`
   await gitCall('pull');
 
   const octokit = github.getOctokit(argv.token);
