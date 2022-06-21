@@ -163,7 +163,8 @@ exports.deletePublishedPackage = async function (argv, info) {
   console.log(`| Version [${info.delVersion}] needs to be deleted |`);
   console.log(`| Version [${packageVersion}] has found |`);
   if (info.delVersion == packageVersion) {
-    const deletePkg = await octokit.graphql(`
+    const deletePkg = await octokit.graphql(
+      `
       mutation {
         deletePackageVersion(input: {packageVersionId: "${packageVersionId}"}) {
           success
