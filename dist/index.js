@@ -71,7 +71,7 @@ exports.createNewPullRequest = async function (output, argv) {
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
   const devChannel = `dev/${versionRef}`;
   //await gitCall('fetch');
-  await gitCall('switch', devChannel); // `origin/${devChannel}`
+  await gitCall('switch', devChannel, `origin/${devChannel}`); // `origin/${devChannel}`
   await gitCall('pull');
 
   const octokit = github.getOctokit(argv.token);
@@ -121,9 +121,9 @@ exports.createNewPullRequest = async function (output, argv) {
     }
   }
   await gitCall('add', '.');
-  await gitCall('commit', '-m', 'test');
-  await gitCall('push');
-  //await gitCall('push', 'origin', `HEAD:${devChannel}`);
+  await gitCall('commit', '-m', 'creat new pr');
+  //await gitCall('push');
+  await gitCall('push', 'origin', `HEAD:${devChannel}`);
   //await gitCall('switch', argv.baseRef);
   console.log(`---Merged pr [${title}](pr number:[${number}]) failed. Creating new open pr...`);
   console.log(`repo id:[${id}]`);
