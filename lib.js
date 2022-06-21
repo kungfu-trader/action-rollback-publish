@@ -100,7 +100,8 @@ exports.solveAllPackages = async function (argv) {
 };
 
 exports.createNewPullRequest = async function (output, argv) {
-  const currentVersion = getCurrentVersion(process.cwd());
+  const processCwd = process.cwd();
+  const currentVersion = getCurrentVersion(processCwd);
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
   const devChannel = `dev/${versionRef}`;
   //await gitCall('fetch');
