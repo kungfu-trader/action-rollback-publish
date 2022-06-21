@@ -99,8 +99,10 @@ exports.solveAllPackages = async function (argv) {
   await exports.createNewPullRequest(argv);
 };
 
-
 exports.createNewPullRequest = async function (argv) {
+  const result = spawnSync('yarn', ['-s', 'workspaces', 'info'], spawnOpts);
+  const outputStr = result.output.filter((e) => e && e.length > 0).toString();
+  const output = JSON.parse(outputStr);
   const processCwd = process.cwd();
   const currentVersion = getCurrentVersion(processCwd);
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
