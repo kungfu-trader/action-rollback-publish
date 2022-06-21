@@ -8,6 +8,12 @@ const { spawnSync } = require('child_process');
 
 const spawnOpts = { shell: true, stdio: 'pipe', windowsHide: true };
 
+function getCurrentVersion(cwd) {
+  const configPath = path.join(cwd, hasLerna(cwd) ? 'lerna.json' : 'package.json');
+  const config = JSON.parse(fse.readFileSync(configPath));
+  return semver.parse(config.version);
+}
+
 async function gitCall(...args) {
   console.log('$ git', ...args);
   const output = await git(...args);
@@ -17,12 +23,6 @@ async function gitCall(...args) {
 
 function hasLerna(cwd) {
   return fse.existsSync(path.join(cwd, 'lerna.json'));
-}
-
-function getCurrentVersion(cwd) {
-  const configPath = path.join(cwd, hasLerna(cwd) ? 'lerna.json' : 'package.json');
-  const config = JSON.parse(fse.readFileSync(configPath));
-  return semver.parse(config.version);
 }
 
 exports.rollbackRelease = async function (argv) {
@@ -96,10 +96,13 @@ exports.solveAllPackages = async function (argv) {
     await exports.deletePublishedPackage(argv.token, argv.repo, argv.owner, names, delVersion);
     console.log(`---Already has deleted package: ${names}(version:${delVersion})---\n\n`);
   }
-  await exports.createNewPullRequest(output, argv);
+  await exports.createNewPullRequest(argv);
 };
 
-exports.createNewPullRequest = async function (output, argv) {
+exports.createNewPullRequest = async function (argv) {
+  const result = spawnSync('yarn', ['-s', 'workspaces', 'info'], spawnOpts);
+  const outputStr = result.output.filter((e) => e && e.length > 0).toString();
+  const output = JSON.parse(outputStr);
   const processCwd = process.cwd();
   const currentVersion = getCurrentVersion(processCwd);
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
