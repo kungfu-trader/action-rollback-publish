@@ -48,6 +48,16 @@ const { spawnSync } = __nccwpck_require__(3129);
 
 const spawnOpts = { shell: true, stdio: 'pipe', windowsHide: true };
 
+function hasLerna(cwd) {
+  return fse.existsSync(path.join(cwd, 'lerna.json'));
+}
+
+function getCurrentVersion(cwd) {
+  const configPath = path.join(cwd, hasLerna(cwd) ? 'lerna.json' : 'package.json');
+  const config = JSON.parse(fse.readFileSync(configPath));
+  return semver.parse(config.version);
+}
+
 async function gitCall(...args) {
   console.log('$ git', ...args);
   const output = await git(...args);
@@ -87,21 +97,15 @@ exports.solveAllPackages = async function (argv) {
     await exports.deletePublishedPackage(argv, info);
   }
 
-  await exports.createNewPullRequest(output, argv);
+  await exports.createNewPullRequest(argv);
 };
 
-function hasLerna(cwd) {
-  return fse.existsSync(path.join(cwd, 'lerna.json'));
-}
-
-function getCurrentVersion(cwd) {
-  const configPath = path.join(cwd, hasLerna(cwd) ? 'lerna.json' : 'package.json');
-  const config = JSON.parse(fse.readFileSync(configPath));
-  return semver.parse(config.version);
-}
-
-exports.createNewPullRequest = async function (output, argv) {
-  const currentVersion = getCurrentVersion(process.cwd());
+exports.createNewPullRequest = async function (argv) {
+  const pkgsWorkspace = spawnSync('yarn', ['-s', 'workspaces', 'info'], spawnOpts);
+  const workspaceStr = pkgsWorkspace.output.filter((e) => e && e.length > 0).toString();
+  const output = JSON.parse(workspaceStr);
+  const processCwd = process.cwd();
+  const currentVersion = getCurrentVersion(processCwd);
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
   const devChannel = `dev/${versionRef}`;
   //await gitCall('fetch');
