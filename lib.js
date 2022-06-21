@@ -3,9 +3,27 @@ const github = require('@actions/github');
 const fse = require('fs-extra');
 const path = require('path');
 const git = require('git-client');
+const semver = require('semver');
 const { spawnSync } = require('child_process');
 
 const spawnOpts = { shell: true, stdio: 'pipe', windowsHide: true };
+
+async function gitCall(...args) {
+  console.log('$ git', ...args);
+  const output = await git(...args);
+  console.log(output);
+  return output;
+}
+
+function hasLerna(cwd) {
+  return fse.existsSync(path.join(cwd, 'lerna.json'));
+}
+
+function getCurrentVersion(cwd) {
+  const configPath = path.join(cwd, hasLerna(cwd) ? 'lerna.json' : 'package.json');
+  const config = JSON.parse(fse.readFileSync(configPath));
+  return semver.parse(config.version);
+}
 
 exports.rollbackRelease = async function (argv) {
   console.log(`token:${argv.token}`);
@@ -78,4 +96,78 @@ exports.solveAllPackages = async function (argv) {
     await exports.deletePublishedPackage(argv.token, argv.repo, argv.owner, names, delVersion);
     console.log(`---Already has deleted package: ${names}(version:${delVersion})---\n\n`);
   }
+  await exports.createNewPullRequest(output, argv);
+};
+
+exports.createNewPullRequest = async function (output, argv) {
+  const currentVersion = getCurrentVersion(process.cwd());
+  const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
+  const devChannel = `dev/${versionRef}`;
+  //await gitCall('fetch');
+  await gitCall('switch', devChannel); // `origin/${devChannel}`
+  await gitCall('pull');
+
+  const octokit = github.getOctokit(argv.token);
+  const lastMergedPullRequestInfo = await octokit.graphql(`
+    query {
+      repository(name: "${argv.repo}", owner: "${argv.owner}") {
+        id
+        url
+        pullRequests(last: 1, states: MERGED) {
+          nodes {
+            id
+            state
+            number
+            title
+          }
+        }
+      }
+    }`);
+  const number = lastMergedPullRequestInfo.repository.pullRequests.nodes[0].number;
+  const url = lastMergedPullRequestInfo.repository.url;
+  const id = lastMergedPullRequestInfo.repository.id;
+  const title = lastMergedPullRequestInfo.repository.pullRequests.nodes[0].title;
+  const headId = await gitCall('rev-parse', 'HEAD');
+  const repositoryNameWithOwner = argv.owner + '/' + argv.repo;
+  console.log(`---------The branch now is pointing to ${headId}`);
+  console.log(`---------RepositoryNameWithOwner:${repositoryNameWithOwner}`);
+  for (const key in output) {
+    console.log(`\npackage path is: ${output[key].location}`);
+    const processPath = process.cwd();
+    console.log(`process path is: ${processPath}\n`);
+    const packagePath = path.join(processPath, output[key].location);
+    const package = path.join(packagePath, 'package.json');
+    //const package = path.join(processCwd, output[key].location, 'package.json');
+    const config = JSON.parse(fse.readFileSync(package));
+    const info = {
+      names: config.name.split(['/'])[1],
+      delVersion: config.version,
+      package: package,
+      config: config,
+    };
+    if (!config.repository) {
+      config.repository = {
+        url: `${url}.git`,
+      };
+      //fse.writeFileSync(info.package, JSON.stringify(info.config, null, '\t'));
+      fse.writeFileSync(info.package, JSON.stringify(info.config, null, 2));
+    }
+  }
+  await gitCall('add', '.');
+  await gitCall('commit', '-m', 'test');
+  await gitCall('push');
+  //await gitCall('push', 'origin', `HEAD:${devChannel}`);
+  //await gitCall('switch', argv.baseRef);
+  console.log(`---Merged pr [${title}](pr number:[${number}]) failed. Creating new open pr...`);
+  console.log(`repo id:[${id}]`);
+  console.log(`baseRef:[${argv.baseRef}]`);
+  console.log(`headRef:[${argv.headRef}]`);
+  console.log(`New pr title:[${title}]`);
+  const newPullRequest = await octokit.graphql(`
+    mutation {
+      createPullRequest(input: {repositoryId: "${id}", baseRefName: "${argv.baseRef}", headRefName: "${argv.headRef}", title: "${title}"}) {
+        clientMutationId
+      }
+    }`);
+  console.log(`New pr has created, which is:[${title}](${argv.headRef}--->${argv.baseRef});`);
 };
