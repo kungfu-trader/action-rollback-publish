@@ -70,8 +70,9 @@ exports.createNewPullRequest = async function (output, argv) {
   const currentVersion = getCurrentVersion(process.cwd());
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
   const devChannel = `dev/${versionRef}`;
-  //await gitCall('fetch');
-  await gitCall('switch', devChannel, `origin/${devChannel}`); // `origin/${devChannel}`
+  await gitCall('fetch');
+  //await gitCall('switch', devChannel, `origin/${devChannel}`); // `origin/${devChannel}`
+  await gitCall('switch', devChannel);
   await gitCall('pull');
 
   const octokit = github.getOctokit(argv.token);
