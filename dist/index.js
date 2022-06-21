@@ -133,9 +133,9 @@ exports.createNewPullRequest = async function (output, argv) {
   console.log(`---------The branch now is pointing to ${headId}`);
   console.log(`---------RepositoryNameWithOwner:${repositoryNameWithOwner}`);
   for (const key in output) {
-    console.log(`package path is: ${output[key].location}`);
+    console.log(`\npackage path is: ${output[key].location}`);
     const processPath = process.cwd();
-    console.log(`process path is: ${processPath}`);
+    console.log(`process path is: ${processPath}\n`);
     const packagePath = path.join(processPath, output[key].location);
     const package = path.join(packagePath, 'package.json');
     //const package = path.join(processCwd, output[key].location, 'package.json');
