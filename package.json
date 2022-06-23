@@ -8,7 +8,7 @@
   "scripts": {
     "build": "yarn dist",
     "dist": "ncc build index.js",
-    "forma": "prettier --write --parser typescript \"*.js\"",
+    "format": "prettier --write --parser typescript \"*.js\"",
     "lint": "eslint --ext .js ."
   },
   "dependencies": {
