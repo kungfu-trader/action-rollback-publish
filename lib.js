@@ -65,7 +65,7 @@ exports.createNewPullRequest = async function (output, argv) {
   const versionRef = `v${currentVersion.major}/v${currentVersion.major}.${currentVersion.minor}`;
   const devChannel = `dev/${versionRef}`;
   await gitCall('fetch');
-  //await gitCall('switch', devChannel, `origin/${devChannel}`); // `origin/${devChannel}`
+  //await gitCall('switch', devChannel, `origin/${devChannel}`); //`origin/${devChannel}`
   await gitCall('switch', devChannel);
   await gitCall('pull');
 
