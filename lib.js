@@ -47,7 +47,11 @@ exports.solveAllPackages = async function (argv) {
       console.log(`Package set {'Private': true} will not be published, just skipping!`);
     } else {
       console.log(`--- Starting to delete package: ${info.names}(version:${info.delVersion}) ---`);
-      await exports.deletePublishedPackage(argv, info);
+      try {
+        await exports.deletePublishedPackage(argv, info);
+      } catch (e) {
+        console.log('[Warning!] Error on delete published package:\n', e);
+      }
     }
   }
   await exports.createNewPullRequest(output, argv);
