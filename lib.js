@@ -34,16 +34,15 @@ exports.solveAllPackages = async function (argv) {
     const packagePath = path.join(processPath, output[key].location);
     const package = path.join(packagePath, 'package.json');
     //const package = path.join(processCwd, output[key].location, 'package.json');
-    //console.log(`Package.json path is: ${package}`);
-    const config = JSON.parse(fse.readFileSync(package));
     console.log(`Package.json path is: ${package}`);
+    const config = JSON.parse(fse.readFileSync(package));
     const info = {
       names: config.name.split(['/'])[1],
       delVersion: config.version,
       package: package,
       config: config,
     };
-    
+
     if (${config.private} === true ){
       console.log(`Package set {'Private': true} will not be published, just skipping!`);
     } else {
@@ -124,7 +123,7 @@ exports.createNewPullRequest = async function (output, argv) {
   //await gitCall('push');
   await gitCall('push', 'origin', `HEAD:${devChannel}`);
   //await gitCall('switch', argv.baseRef);
-  console.log(`---Merged pr [${title}](pr number:[${number}]) failed. Creating a new open PR...`);
+  console.log(`---Merged pr [${title}](pr number:[${number}]) failed. Creating new open pr...`);
   console.log(`repo id:[${id}]`);
   console.log(`baseRef:[${argv.baseRef}]`);
   console.log(`headRef:[${argv.headRef}]`);
@@ -165,8 +164,8 @@ exports.deletePublishedPackage = async function (argv, info) {
   const packageVersionId = packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.id;
   const packageVersion =
     packageInfo.repository.packages.edges[edgesNumber].node.versions.edges[edgesNumber].node.version;
-  console.log(`| Version [${info.delVersion}] needs to be deleted. |`);
-  console.log(`| Version [${packageVersion}] has found. |`);
+  console.log(`| Version [${info.delVersion}] needs to be deleted |`);
+  console.log(`| Version [${packageVersion}] has found |`);
   if (info.delVersion == packageVersion) {
     const deletePkg = await octokit.graphql(
       `
@@ -177,10 +176,10 @@ exports.deletePublishedPackage = async function (argv, info) {
       }`,
       { headers: { accept: `application/vnd.github.package-deletes-preview+json` } },
     );
-    console.log(`[Success!] Already has deleted package [${info.names}] with version [${info.delVersion}]---\n`);
+    console.log(`[info] Already has deleted package [${info.names}] with version [${info.delVersion}]---\n`);
   } else {
     console.log(
-      `[Notice!] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
+      `[info] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
     );
   }
 };
