@@ -46,7 +46,7 @@ exports.solveAllPackages = async function (argv) {
     if (${config.private} === true ){
       console.log(`Package set {'Private': true} will not be published, just skipping!`);
     } else {
-      console.log(`---Starting to delete package: ${info.names}(version:${info.delVersion})---`);
+      console.log(`--- Starting to delete package: ${info.names}(version:${info.delVersion}) ---`);
       await exports.deletePublishedPackage(argv, info);
     }
   }
@@ -95,7 +95,7 @@ exports.createNewPullRequest = async function (output, argv) {
   const headId = await gitCall('rev-parse', 'HEAD');
   const repositoryNameWithOwner = argv.owner + '/' + argv.repo;
   console.log(`---------The branch now is pointing to ${headId}`);
-  console.log(`---------RepositoryNameWithOwner:${repositoryNameWithOwner}`);
+  console.log(`---------RepositoryNameWithOwner: ${repositoryNameWithOwner}`);
   for (const key in output) {
     console.log(`\npackage path is: ${output[key].location}`);
     const processPath = process.cwd();
@@ -123,7 +123,7 @@ exports.createNewPullRequest = async function (output, argv) {
   //await gitCall('push');
   await gitCall('push', 'origin', `HEAD:${devChannel}`);
   //await gitCall('switch', argv.baseRef);
-  console.log(`---Merged pr [${title}](pr number:[${number}]) failed. Creating new open pr...`);
+  console.log(`---Merged pr [${title}](pr number:[${number}]) failed. Creating a new open PR...`);
   console.log(`repo id:[${id}]`);
   console.log(`baseRef:[${argv.baseRef}]`);
   console.log(`headRef:[${argv.headRef}]`);
@@ -176,10 +176,10 @@ exports.deletePublishedPackage = async function (argv, info) {
       }`,
       { headers: { accept: `application/vnd.github.package-deletes-preview+json` } },
     );
-    console.log(`[info] Already has deleted package [${info.names}] with version [${info.delVersion}]---\n`);
+    console.log(`[Sucess!] Already has deleted package [${info.names}] with version [${info.delVersion}] \n`);
   } else {
     console.log(
-      `[info] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
+      `[Notice!] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
     );
   }
 };
