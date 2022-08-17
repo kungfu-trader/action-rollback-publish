@@ -43,7 +43,7 @@ exports.solveAllPackages = async function (argv) {
       config: config,
     };
 
-    if (${config.private} === true ){
+    if (`${config.private}` === true) {
       console.log(`Package set {'Private': true} will not be published, just skipping!`);
     } else {
       console.log(`--- Starting to delete package: ${info.names}(version:${info.delVersion}) ---`);
