@@ -25,7 +25,11 @@ exports.rollbackRelease = async function (argv) {
   const rootPackageJson = fse.readJSONSync('package.json');
   console.log(`token:${argv.token}`);
   console.log(rootPackageJson);
-  await exports.solveAllPackages(argv);
+  try {
+    await exports.solveAllPackages(argv);
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 exports.solveAllPackages = async function (argv) {
@@ -38,14 +42,14 @@ exports.solveAllPackages = async function (argv) {
     const processPath = process.cwd();
     console.log(`process path is: ${processPath}`);
     const packagePath = path.join(processPath, output[key].location);
-    const package = path.join(packagePath, 'package.json');
-    //const package = path.join(processCwd, output[key].location, 'package.json');
-    console.log(`Package.json path is: ${package}`);
-    const config = JSON.parse(fse.readFileSync(package));
+    const npm_package = path.join(packagePath, 'package.json');
+    // const package = path.join(processCwd, output[key].location, 'package.json');
+    console.log(`Package.json path is: ${npm_package}`);
+    const config = JSON.parse(fse.readFileSync(npm_package));
     const info = {
       names: config.name.split(['/'])[1],
       delVersion: config.version,
-      package: package,
+      npm_package: npm_package,
       config: config,
     };
 
@@ -54,7 +58,7 @@ exports.solveAllPackages = async function (argv) {
     } else {
       console.log(`--- Starting to delete package: ${info.names}(version:${info.delVersion}) ---`);
       try {
-        await exports.deletePublishedPackage(argv, info);
+        await exports.deletePublishedPackages(argv, info);
       } catch (e) {
         console.log('[Warning!] Error on delete published package:\n', e);
       }
@@ -111,13 +115,13 @@ exports.createNewPullRequest = async function (output, argv) {
     const processPath = process.cwd();
     console.log(`process path is: ${processPath}\n`);
     const packagePath = path.join(processPath, output[key].location);
-    const package = path.join(packagePath, 'package.json');
+    const npm_package = path.join(packagePath, 'package.json');
     //const package = path.join(processCwd, output[key].location, 'package.json');
-    const config = JSON.parse(fse.readFileSync(package));
+    const config = JSON.parse(fse.readFileSync(npm_package));
     const info = {
       names: config.name.split(['/'])[1],
       delVersion: config.version,
-      package: package,
+      npm_package: npm_package,
       config: config,
     };
     if (!config.repository) {
@@ -125,7 +129,7 @@ exports.createNewPullRequest = async function (output, argv) {
         url: `${url}.git`,
       };
       //fse.writeFileSync(info.package, JSON.stringify(info.config, null, '\t'));
-      fse.writeFileSync(info.package, JSON.stringify(info.config, null, 2));
+      fse.writeFileSync(info.npm_package, JSON.stringify(info.config, null, 2));
     }
   }
   await gitCall('add', '.');
@@ -194,6 +198,32 @@ exports.deletePublishedPackage = async function (argv, info) {
   }
 };
 
+exports.deletePublishedPackages = async function (argv, info) {
+    const octokit = github.getOctokit(argv.token);
+    const res =
+      await octokit.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
+        package_type: "npm",
+        package_name: info.names,
+        org: "kungfu-trader",
+      });
+    packageVersion = res.data[0].name;
+    console.log(`| Version [${info.delVersion}] needs to be deleted |`);
+    console.log(`| Version [${packageVersion}] has found |`);
+
+    if (info.delVersion == packageVersion) {
+      const delete_pkg = await octokit.rest.packages.deletePackageVersionForOrg({
+        package_type: "npm",
+        package_name: info.names,
+        org: "kungfu-trader",
+        package_version_id: res.data[0].id,
+      });
+      console.log(`[Sucess!] Already has deleted package [${info.names}] with version [${info.delVersion}] \n`);
+    } else {
+      console.log(
+        `[Notice!] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
+      );
+    }
+}
 
 /***/ }),
 

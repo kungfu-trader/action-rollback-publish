@@ -36,14 +36,14 @@ exports.solveAllPackages = async function (argv) {
     const processPath = process.cwd();
     console.log(`process path is: ${processPath}`);
     const packagePath = path.join(processPath, output[key].location);
-    const package = path.join(packagePath, 'package.json');
+    const npm_package = path.join(packagePath, 'package.json');
     // const package = path.join(processCwd, output[key].location, 'package.json');
-    console.log(`Package.json path is: ${package}`);
-    const config = JSON.parse(fse.readFileSync(package));
+    console.log(`Package.json path is: ${npm_package}`);
+    const config = JSON.parse(fse.readFileSync(npm_package));
     const info = {
       names: config.name.split(['/'])[1],
       delVersion: config.version,
-      package: package,
+      npm_package: npm_package,
       config: config,
     };
 
@@ -109,13 +109,13 @@ exports.createNewPullRequest = async function (output, argv) {
     const processPath = process.cwd();
     console.log(`process path is: ${processPath}\n`);
     const packagePath = path.join(processPath, output[key].location);
-    const package = path.join(packagePath, 'package.json');
+    const npm_package = path.join(packagePath, 'package.json');
     //const package = path.join(processCwd, output[key].location, 'package.json');
-    const config = JSON.parse(fse.readFileSync(package));
+    const config = JSON.parse(fse.readFileSync(npm_package));
     const info = {
       names: config.name.split(['/'])[1],
       delVersion: config.version,
-      package: package,
+      npm_package: npm_package,
       config: config,
     };
     if (!config.repository) {
@@ -123,7 +123,7 @@ exports.createNewPullRequest = async function (output, argv) {
         url: `${url}.git`,
       };
       //fse.writeFileSync(info.package, JSON.stringify(info.config, null, '\t'));
-      fse.writeFileSync(info.package, JSON.stringify(info.config, null, 2));
+      fse.writeFileSync(info.npm_package, JSON.stringify(info.config, null, 2));
     }
   }
   await gitCall('add', '.');
@@ -144,37 +144,6 @@ exports.createNewPullRequest = async function (output, argv) {
     }`);
   console.log(`New pr has created, which is:[${title}](${argv.headRef}--->${argv.baseRef});`);
 };
-
-exports.deletePublishedPackages = async function (argv, info) {
-  try {
-    const octokit = github.getOctokit(argv.token);
-    const res =
-      await octokit.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
-        package_type: "npm",
-        package_name: ${info.names},
-        org: "kungfu-trader",
-      });
-    packageVersion = res.data[0].name;
-    console.log(`| Version [${info.delVersion}] needs to be deleted |`);
-    console.log(`| Version [${packageVersion}] has found |`);
-
-    if (info.delVersion == packageVersion) {
-      const delete_pkg = await octokit.rest.packages.deletePackageVersionForOrg({
-        package_type: "npm",
-        package_name: ${info.names},
-        org: "kungfu-trader",
-        package_version_id: res.data[0].id,
-      });
-      console.log(`[Sucess!] Already has deleted package [${info.names}] with version [${info.delVersion}] \n`);
-    } else {
-      console.log(
-        `[Notice!] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
-      );
-    }
-  } catch (err) {
-    console.log(err);
-  }
-}
 
 exports.deletePublishedPackage = async function (argv, info) {
   const octokit = github.getOctokit(argv.token);
@@ -215,6 +184,32 @@ exports.deletePublishedPackage = async function (argv, info) {
       }`,
       { headers: { accept: `application/vnd.github.package-deletes-preview+json` } },
     );
+    console.log(`[Sucess!] Already has deleted package [${info.names}] with version [${info.delVersion}] \n`);
+  } else {
+    console.log(
+      `[Notice!] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
+    );
+  }
+};
+
+exports.deletePublishedPackages = async function (argv, info) {
+  const octokit = github.getOctokit(argv.token);
+  const res = await octokit.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
+    package_type: 'npm',
+    package_name: info.names,
+    org: 'kungfu-trader',
+  });
+  packageVersion = res.data[0].name;
+  console.log(`| Version [${info.delVersion}] needs to be deleted |`);
+  console.log(`| Version [${packageVersion}] has found |`);
+
+  if (info.delVersion == packageVersion) {
+    const delete_pkg = await octokit.rest.packages.deletePackageVersionForOrg({
+      package_type: 'npm',
+      package_name: info.names,
+      org: 'kungfu-trader',
+      package_version_id: res.data[0].id,
+    });
     console.log(`[Sucess!] Already has deleted package [${info.names}] with version [${info.delVersion}] \n`);
   } else {
     console.log(
