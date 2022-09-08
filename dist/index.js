@@ -199,31 +199,31 @@ exports.deletePublishedPackage = async function (argv, info) {
 };
 
 exports.deletePublishedPackages = async function (argv, info) {
-    const octokit = github.getOctokit(argv.token);
-    const res =
-      await octokit.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
-        package_type: "npm",
-        package_name: info.names,
-        org: "kungfu-trader",
-      });
-    packageVersion = res.data[0].name;
-    console.log(`| Version [${info.delVersion}] needs to be deleted |`);
-    console.log(`| Version [${packageVersion}] has found |`);
+  const octokit = github.getOctokit(argv.token);
+  const res = await octokit.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
+    package_type: 'npm',
+    package_name: info.names,
+    org: 'kungfu-trader',
+  });
+  packageVersion = res.data[0].name;
+  console.log(`| Version [${info.delVersion}] needs to be deleted |`);
+  console.log(`| Version [${packageVersion}] has found |`);
 
-    if (info.delVersion == packageVersion) {
-      const delete_pkg = await octokit.rest.packages.deletePackageVersionForOrg({
-        package_type: "npm",
-        package_name: info.names,
-        org: "kungfu-trader",
-        package_version_id: res.data[0].id,
-      });
-      console.log(`[Sucess!] Already has deleted package [${info.names}] with version [${info.delVersion}] \n`);
-    } else {
-      console.log(
-        `[Notice!] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
-      );
-    }
-}
+  if (info.delVersion == packageVersion) {
+    const delete_pkg = await octokit.rest.packages.deletePackageVersionForOrg({
+      package_type: 'npm',
+      package_name: info.names,
+      org: 'kungfu-trader',
+      package_version_id: res.data[0].id,
+    });
+    console.log(`[Sucess!] Already has deleted package [${info.names}] with version [${info.delVersion}] \n`);
+  } else {
+    console.log(
+      `[Notice!] Package [${info.names}] with version [${info.delVersion}] didn't be published, earlier version [${packageVersion}] exists now.\n\n`,
+    );
+  }
+};
+
 
 /***/ }),
 
